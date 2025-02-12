@@ -40,7 +40,7 @@ class SnakeGame:
         return state
     
     def step(self, action):
-        has_eaten = False
+        # Determine the new direction from the action.
         new_direction = {
             0: (0, -1),  # up
             1: (1, 0),   # right
@@ -48,28 +48,29 @@ class SnakeGame:
             3: (-1, 0)   # left
         }.get(action, self.direction)
         self.direction = new_direction
-        
-        next_position = (self.snake[0][0] + self.direction[0],
-                         self.snake[0][1] + self.direction[1])
-        
-        # Check for food consumption:
-        if next_position == self.food:
-            has_eaten = True
-            self.snake.insert(0, next_position)
-            self.place_food()
-            self.score += 1
-        else:
-            # Move the snake: add new head and remove tail.
-            self.snake.insert(0, next_position)
-            self.snake.pop()
 
-        # Check for collisions (with self or the wall):
-        if (next_position in self.snake[1:] or
+        # Calculate the next head position.
+        next_position = (self.snake[0][0] + self.direction[0],
+                        self.snake[0][1] + self.direction[1])
+        
+        # Check for collisions before updating the snake.
+        if (next_position in self.snake or
             next_position[0] < 0 or next_position[0] >= self.grid_size or
             next_position[1] < 0 or next_position[1] >= self.grid_size):
             return self.get_state(), -100, True
 
-        return self.get_state(), 1 if has_eaten else -1, False
+        # Update the snake and the game state.
+        if next_position == self.food:
+            self.snake.insert(0, next_position)
+            self.place_food()
+            self.score += 1
+            reward = 1
+        else:
+            self.snake.insert(0, next_position)
+            self.snake.pop()
+            reward = -1
+
+        return self.get_state(), reward, False
 
     def render(self):
         # Initialize the pygame window and clock if needed.
@@ -127,10 +128,8 @@ class SnakeGame:
                 if done:
                     print("Game Over! Final Score:", self.score)
                     running = False
-
             if self.shouldRender:
                 self.render()
-
         self.close()
 
     def close(self):
